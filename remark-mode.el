@@ -5,6 +5,7 @@
 ;; Author: @torgeir
 ;; Version: 1.0.0
 ;; Keywords: remark, slideshow, markdown
+;; Package-Requires: ((markdown-mode "2.0"))
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -27,6 +28,8 @@
 ;; https://github.com/gnab/remark
 
 ;;; Code:
+
+(require 'markdown-mode)
 
 (defun remark-util-is-point-at-end-of-buffer ()
   "checks if point is at end of file"
