@@ -165,8 +165,10 @@
    (cons "\\(template\\|name\\|class\\)" font-lock-comment-face))
   "keyword highlight for `remark-mode'")
 
+;;;###autoload
 (add-to-list 'auto-mode-alist '("\\.remark\\'" . remark-mode))
 
+;;;###autoload
 (define-derived-mode
   remark-mode
   markdown-mode
