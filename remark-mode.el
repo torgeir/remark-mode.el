@@ -175,7 +175,7 @@
   "remark"
   "a major mode for editing remark files"
   :syntax-table remark-mode-syntax-table
-  (setq-local font-lock-defaults (list (append remark-font-lock-defaults markdown-mode-font-lock-keywords))))
+  (setq font-lock-defaults (list (append remark-font-lock-defaults markdown-mode-font-lock-keywords))))
 
 (provide 'remark-mode)
 ;;; remark-mode.el ends here
