@@ -23,4 +23,4 @@ Dependencies
 
 Todo
 
-- [ ] Use `xdg-open` instead of `open` so it works on other oses than os x
+- [ ] Use `xdg-open` instead of `open` on linux, `open` is os x only?
