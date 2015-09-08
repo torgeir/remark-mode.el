@@ -14,3 +14,13 @@ Key bindings
 - `C-c C-s k` kill slide
 - `C-c C-s n` create note
 - `C-c C-s c` connect browser
+
+Dependencies
+
+- markdown-mode
+- node+npm
+- browser-sync (`npm i -g browser-sync`)
+
+Todo
+
+- [ ] Use `xdg-open` instead of `open` so it works on other oses than os x
