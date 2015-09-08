@@ -17,9 +17,9 @@ Key bindings
 
 Dependencies
 
-- markdown-mode
+- [markdown-mode](https://github.com/defunkt/markdown-mode)
 - node+npm
-- browser-sync (`npm i -g browser-sync`)
+- [browser-sync](http://www.browsersync.io/) (`npm i -g browser-sync`)
 
 Todo
 
