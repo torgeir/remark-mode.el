@@ -5,6 +5,7 @@
 ;; Author: @torgeir
 ;; Version: 1.0.0
 ;; Keywords: remark, slideshow, markdown
+;; Package-Requires: ((markdown-mode "2.0"))
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -27,6 +28,8 @@
 ;; https://github.com/gnab/remark
 
 ;;; Code:
+
+(require 'markdown-mode)
 
 (defun remark-util-is-point-at-end-of-buffer ()
   "checks if point is at end of file"
@@ -162,15 +165,17 @@
    (cons "\\(template\\|name\\|class\\)" font-lock-comment-face))
   "keyword highlight for `remark-mode'")
 
+;;;###autoload
 (add-to-list 'auto-mode-alist '("\\.remark\\'" . remark-mode))
 
+;;;###autoload
 (define-derived-mode
   remark-mode
   markdown-mode
   "remark"
   "a major mode for editing remark files"
   :syntax-table remark-mode-syntax-table
-  (setq-local font-lock-defaults (list (append remark-font-lock-defaults markdown-mode-font-lock-keywords))))
+  (setq font-lock-defaults (list (append remark-font-lock-defaults markdown-mode-font-lock-keywords))))
 
 (provide 'remark-mode)
 ;;; remark-mode.el ends here
