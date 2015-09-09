@@ -23,7 +23,7 @@ Dependencies
 
 Todo
 
-- [ ] Use `xdg-open` instead of `open` on linux, `open` is os x only?
+- [x] Use `xdg-open` instead of `open` on linux, `open` is os x only? Or the built in `(browse-url url)`.
 
 History
 
