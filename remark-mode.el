@@ -1,4 +1,4 @@
-;;; remark-mode.el --- a major mode for remark
+;;; remark-mode.el --- Major mode for the remark slideshow tool
 
 ;; Copyright (C) 2015 Torgeir Thoresen
 
@@ -22,8 +22,8 @@
 
 ;;; Commentary:
 
-;; a major mode for remark
-;; the simple, in-browser, markdown-driven slideshow tool
+;; A major mode for remark, the simple, in-browser, markdown-driven
+;; slideshow tool
 ;;
 ;; https://github.com/gnab/remark
 
