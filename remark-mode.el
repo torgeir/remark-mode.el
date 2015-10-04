@@ -129,6 +129,7 @@
    "*remark browser-sync error*")
   (sit-for 1)
   (message "remark browser-sync connected")
+  (remark-save)
   (browse-url "http://localhost:3000"))
 
 (defun remark-save ()
