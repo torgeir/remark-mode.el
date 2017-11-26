@@ -3,7 +3,7 @@
 ;; Copyright (C) 2015 Torgeir Thoresen
 
 ;; Author: @torgeir
-;; Version: 1.1.4
+;; Version: 1.2.4
 ;; Keywords: remark, slideshow, markdown
 ;; Package-Requires: ((markdown-mode "2.0"))
 
@@ -32,6 +32,10 @@
 (require 'markdown-mode)
 
 (defconst remark--is-osx (equal system-type 'darwin))
+
+(defvar remark-preferred-browser
+  "Google Chrome"
+  "The applescript name of the application that the user's default browser.")
 
 (defun remark-util-is-point-at-end-of-buffer ()
   "Check if point is at end of file."
@@ -128,7 +132,9 @@
 
 (defun remark--osascript-show-slide (n)
   (remark--run-osascript
-   (format "tell application \"Google Chrome\" to set URL of active tab of window 1 to \"http://localhost:3000/#p%s\"" n)))
+   (format "tell application \"%s\" to set URL of active tab of window 1 to \"http://localhost:3000/#p%s\""
+           remark-preferred-browser
+           n)))
 
 (defun remark-visit-slide-in-browser ()
   (interactive)
