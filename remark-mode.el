@@ -3,7 +3,7 @@
 ;; Copyright (C) 2015 Torgeir Thoresen
 
 ;; Author: @torgeir
-;; Version: 1.0.4
+;; Version: 1.1.4
 ;; Keywords: remark, slideshow, markdown
 ;; Package-Requires: ((markdown-mode "2.0"))
 
@@ -31,6 +31,8 @@
 
 (require 'markdown-mode)
 
+(defconst remark--is-osx (equal system-type 'darwin))
+
 (defun remark-util-is-point-at-end-of-buffer ()
   "Check if point is at end of file."
   (= (point) (point-max)))
@@ -51,14 +53,16 @@
   (end-of-line)
   (if (search-forward-regexp "---" nil t)
       (move-beginning-of-line 1)
-    (end-of-buffer)))
+    (end-of-buffer))
+  (when remark--is-osx (remark-visit-slide-in-browser)))
 
 (defun remark-prev-slide ()
   "Skip to prev slide."
   (interactive)
   (if (search-backward-regexp "---" nil t)
       (move-beginning-of-line 1)
-    (beginning-of-buffer)))
+    (beginning-of-buffer))
+  (when remark--is-osx (remark-visit-slide-in-browser)))
 
 (defun remark-new-separator (sep)
   "Add separator SEP at end of next slide."
@@ -117,6 +121,22 @@
          (index-file-nosymlink (file-truename index-file)))
     (write-region index-content nil index-file-nosymlink nil)
     (shell-command "browser-sync reload")))
+
+(defun remark--run-osascript (s)
+  "Run applescript."
+  (shell-command (format "osascript -e '%s'" s)))
+
+(defun remark--osascript-show-slide (n)
+  (remark--run-osascript
+   (format "tell application \"Google Chrome\" to set URL of active tab of window 1 to \"http://localhost:3000/#p%s\"" n)))
+
+(defun remark-visit-slide-in-browser ()
+  (interactive)
+  (let ((slides (split-string
+                 (buffer-substring (point-min)
+                                   (min (point-max) (+ (point) 3)))
+                 "---")))
+    (remark--osascript-show-slide (length slides))))
 
 (defun remark-connect-browser ()
   "Serve folder with browsersync."
