@@ -3,7 +3,7 @@
 ;; Copyright (C) 2015 Torgeir Thoresen
 
 ;; Author: @torgeir
-;; Version: 1.0.0
+;; Version: 1.0.1
 ;; Keywords: remark, slideshow, markdown
 ;; Package-Requires: ((markdown-mode "2.0"))
 
@@ -176,7 +176,11 @@
   "remark"
   "a major mode for editing remark files"
   :syntax-table remark-mode-syntax-table
-  (setq font-lock-defaults (list (append remark-font-lock-defaults markdown-mode-font-lock-keywords))))
+  (setq font-lock-defaults
+        (list (append
+               remark-font-lock-defaults
+               markdown-mode-font-lock-keywords-math
+               markdown-mode-font-lock-keywords-basic))))
 
 (provide 'remark-mode)
 ;;; remark-mode.el ends here
