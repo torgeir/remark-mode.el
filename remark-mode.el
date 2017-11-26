@@ -32,21 +32,21 @@
 (require 'markdown-mode)
 
 (defun remark-util-is-point-at-end-of-buffer ()
-  "checks if point is at end of file"
+  "Check if point is at end of file."
   (= (point) (point-max)))
 
 (defun remark-util-replace-string (old new s)
-  "replaces old with new in s"
+  "Replace OLD with NEW in S."
   (replace-regexp-in-string (regexp-quote old) new s t t))
 
 (defun remark-util-file-as-string (file-path)
-  "get file contents as string"
+  "Get file contents from file at FILE-PATH as string."
   (with-temp-buffer
     (insert-file-contents file-path)
     (buffer-string)))
 
 (defun remark-next-slide ()
-  "skip to next slide"
+  "Skip to next slide."
   (interactive)
   (end-of-line)
   (if (search-forward-regexp "---" nil t)
@@ -54,14 +54,14 @@
     (end-of-buffer)))
 
 (defun remark-prev-slide ()
-  "skip to prev slide"
+  "Skip to prev slide."
   (interactive)
   (if (search-backward-regexp "---" nil t)
       (move-beginning-of-line 1)
     (beginning-of-buffer)))
 
 (defun remark-new-separator (sep)
-  "adds separator at end of next slide"
+  "Add separator SEP at end of next slide."
   (remark-next-slide)
   (if (remark-util-is-point-at-end-of-buffer)
       (insert (concat "\n" sep "\n"))
@@ -70,22 +70,22 @@
       (previous-line))))
 
 (defun remark-new-slide ()
-  "creates new slide"
+  "Create new slide."
   (interactive)
   (remark-new-separator "---"))
 
 (defun remark-create-note ()
-  "creates note for slide"
+  "Create note for slide."
   (interactive)
   (remark-new-separator "???"))
 
 (defun remark-new-incremental-slide ()
-  "creates new incremental slide"
+  "Create new incremental slide."
   (interactive)
   (remark-new-separator "--"))
 
 (defun remark-kill-slide ()
-  "kills the current slide"
+  "Kill the current slide."
   (interactive)
   (remark-prev-slide)
   (let ((current-slide-start (point)))
@@ -100,12 +100,12 @@
 
 (defcustom remark-folder
   (file-name-directory (locate-file "remark-mode.el" load-path))
-  "folder containing remark skeleton file remark.html"
+  "Folder containing remark skeleton file remark.html."
   :type 'string
   :group 'remark)
 
 (defun remark-reload-in-browser ()
-  "preview slideshow in browser"
+  "Preview slideshow in browser."
   (interactive)
   (let* ((remark-file (concat remark-folder "remark.html"))
          (template-content (remark-util-file-as-string remark-file))
@@ -119,7 +119,7 @@
     (shell-command "browser-sync reload")))
 
 (defun remark-connect-browser ()
-  "serve folder with browsersync"
+  "Serve folder with browsersync."
   (interactive)
   (async-shell-command
    (concat "browser-sync start --server "
@@ -133,7 +133,7 @@
   (browse-url "http://localhost:3000"))
 
 (defun remark-save ()
-  "saves the file and reloads in browser"
+  "Save the file and reloads in browser."
   (interactive)
   (save-buffer)
   (if (get-buffer "*remark browser-sync*")
@@ -143,7 +143,7 @@
              "Use C-c C-s c to connect to a browser using browser-sync!"))))
 
 (defun remark-save-hook ()
-  "Hook to reload remark-mode buffers when saved."
+  "Hook to reload ‘remark-mode’ buffers when saved."
   (when (string-suffix-p ".remark" buffer-file-name)
     (remark-save)))
 
@@ -157,18 +157,18 @@
     (define-key map (kbd "C-c C-s n") 'remark-create-note)
     (define-key map (kbd "C-c C-s c") 'remark-connect-browser)
     map)
-  "keymap for `remark-mode'")
+  "Keymap for `remark-mode'.")
 
 (defvar remark-mode-syntax-table
   (let ((st (make-syntax-table))) st)
-  "syntax table for `remark-mode'")
+  "Syntax table for `remark-mode'.".)
 
 (defconst remark-font-lock-defaults
   (list
    (cons "---" font-lock-warning-face)
    (cons "\\?\\?\\?" font-lock-comment-face)
    (cons "\\(template\\|name\\|class\\)" font-lock-comment-face))
-  "keyword highlight for `remark-mode'")
+  "Keyword highlight for `remark-mode'.".)
 
 ;;;###autoload
 (add-to-list 'auto-mode-alist '("\\.remark\\'" . remark-mode))
@@ -178,7 +178,7 @@
   remark-mode
   markdown-mode
   "remark"
-  "a major mode for editing remark files"
+  "A major mode for editing remark files."
   :syntax-table remark-mode-syntax-table
   (progn
     (setq font-lock-defaults
