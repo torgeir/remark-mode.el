@@ -3,7 +3,7 @@
 ;; Copyright (C) 2015 Torgeir Thoresen
 
 ;; Author: @torgeir
-;; Version: 1.0.3
+;; Version: 1.0.4
 ;; Keywords: remark, slideshow, markdown
 ;; Package-Requires: ((markdown-mode "2.0"))
 
@@ -161,14 +161,14 @@
 
 (defvar remark-mode-syntax-table
   (let ((st (make-syntax-table))) st)
-  "Syntax table for `remark-mode'.".)
+  "Syntax table for `remark-mode'.")
 
 (defconst remark-font-lock-defaults
   (list
    (cons "---" font-lock-warning-face)
    (cons "\\?\\?\\?" font-lock-comment-face)
    (cons "\\(template\\|name\\|class\\)" font-lock-comment-face))
-  "Keyword highlight for `remark-mode'.".)
+  "Keyword highlight for `remark-mode'.")
 
 ;;;###autoload
 (add-to-list 'auto-mode-alist '("\\.remark\\'" . remark-mode))
