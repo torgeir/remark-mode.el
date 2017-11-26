@@ -3,7 +3,7 @@
 ;; Copyright (C) 2015 Torgeir Thoresen
 
 ;; Author: @torgeir
-;; Version: 1.0.1
+;; Version: 1.0.2
 ;; Keywords: remark, slideshow, markdown
 ;; Package-Requires: ((markdown-mode "2.0"))
 
@@ -146,7 +146,6 @@
   (let ((map (make-sparse-keymap)))
     (define-key map (kbd "M-n") 'remark-next-slide)
     (define-key map (kbd "M-p") 'remark-prev-slide)
-    (define-key map (kbd "C-x C-s") 'remark-save)
     (define-key map (kbd "C-c C-s s") 'remark-new-slide)
     (define-key map (kbd "C-c C-s i") 'remark-new-incremental-slide)
     (define-key map (kbd "C-c C-s k") 'remark-kill-slide)
@@ -176,11 +175,13 @@
   "remark"
   "a major mode for editing remark files"
   :syntax-table remark-mode-syntax-table
-  (setq font-lock-defaults
-        (list (append
-               remark-font-lock-defaults
-               markdown-mode-font-lock-keywords-math
-               markdown-mode-font-lock-keywords-basic))))
+  (progn
+    (setq font-lock-defaults
+          (list (append
+                 remark-font-lock-defaults
+                 markdown-mode-font-lock-keywords-math
+                 markdown-mode-font-lock-keywords-basic)))
+    (add-hook 'after-save-hook 'remark-save)))
 
 (provide 'remark-mode)
 ;;; remark-mode.el ends here
