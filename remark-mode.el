@@ -3,7 +3,7 @@
 ;; Copyright (C) 2015 Torgeir Thoresen
 
 ;; Author: @torgeir
-;; Version: 1.0.2
+;; Version: 1.0.3
 ;; Keywords: remark, slideshow, markdown
 ;; Package-Requires: ((markdown-mode "2.0"))
 
