@@ -142,6 +142,11 @@
      (concat "Wrote " buffer-file-name ". "
              "Use C-c C-s c to connect to a browser using browser-sync!"))))
 
+(defun remark-save-hook ()
+  "Hook to reload remark-mode buffers when saved."
+  (when (string-suffix-p ".remark" buffer-file-name)
+    (remark-save)))
+
 (defvar remark-mode-map
   (let ((map (make-sparse-keymap)))
     (define-key map (kbd "M-n") 'remark-next-slide)
@@ -181,7 +186,7 @@
                  remark-font-lock-defaults
                  markdown-mode-font-lock-keywords-math
                  markdown-mode-font-lock-keywords-basic)))
-    (add-hook 'after-save-hook 'remark-save)))
+    (add-hook 'after-save-hook 'remark-save-hook)))
 
 (provide 'remark-mode)
 ;;; remark-mode.el ends here
