@@ -3,8 +3,8 @@
 ;; Copyright (C) 2015 Torgeir Thoresen
 
 ;; Author: @torgeir
-;; Version: 1.5.0
-;; Keywords: remark, slideshow, markdown
+;; Version: 1.6.0
+;; Keywords: remark, slideshow, markdown, hot reload
 ;; Package-Requires: ((emacs "25.1") (markdown-mode "2.0"))
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -85,17 +85,20 @@
 (defun remark-new-slide ()
   "Create new slide."
   (interactive)
-  (remark-new-separator "---"))
+  (remark-new-separator "---")
+  (save-buffer))
 
 (defun remark-create-note ()
   "Create note for slide."
   (interactive)
-  (remark-new-separator "???"))
+  (remark-new-separator "???")
+  (save-buffer))
 
 (defun remark-new-incremental-slide ()
   "Create new incremental slide."
   (interactive)
-  (remark-new-separator "--"))
+  (remark-new-separator "--")
+  (save-buffer))
 
 (defun remark-kill-slide ()
   "Kill the current slide."
@@ -109,7 +112,8 @@
                    (if has-next-slide-marker
                        next-slide-start
                      (point-max)))
-      (move-beginning-of-line nil))))
+      (move-beginning-of-line nil))
+    (save-buffer)))
 
 (defcustom remark-folder
   (file-name-directory (locate-file "remark-mode.el" load-path))

@@ -28,6 +28,9 @@ Todo
 - [ ] Support custom index.html files in same folder as .remark file to allow for images
 
 Changelog
+- 2017-11-27: v1.6.0:
+Save buffer after performing slide actions (new, kill, incremental) for the
+ultimate reload experience
 
 - 2017-11-27: v1.5.0:
 Handle layout: true to always show the correct slide in the browser
