@@ -27,6 +27,8 @@ Todo
 - [x] Show visited slide in browser (os x)
 - [ ] Support custom index.html files in same folder as .remark file to allow for images
 - [ ] Support moving slides around
+- [ ] Don't always enter presentation mode, keep it if its on, don't turn it on
+  if its off
 
 Changelog
 - 2017-11-27: v1.6.0:
