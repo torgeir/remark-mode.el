@@ -127,16 +127,18 @@
     (shell-command "browser-sync reload")))
 
 (defun remark--run-osascript (s)
-  "Run applescript."
+  "Run applescript S."
   (shell-command (format "osascript -e '%s'" s)))
 
 (defun remark--osascript-show-slide (n)
+  "Run applescript to make browser navigate to slide N."
   (remark--run-osascript
    (format "tell application \"%s\" to set URL of active tab of window 1 to \"http://localhost:3000/#p%s\""
            remark-preferred-browser
            n)))
 
 (defun remark-visit-slide-in-browser ()
+  "Visit slide at point in browser."
   (interactive)
   (let ((slides (split-string
                  (buffer-substring (point-min)
