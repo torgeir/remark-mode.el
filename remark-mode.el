@@ -3,7 +3,7 @@
 ;; Copyright (C) 2015 Torgeir Thoresen
 
 ;; Author: @torgeir
-;; Version: 1.3.0
+;; Version: 1.4.0
 ;; Keywords: remark, slideshow, markdown
 ;; Package-Requires: ((markdown-mode "2.0"))
 
@@ -216,7 +216,7 @@
   (list
    (cons "---" font-lock-warning-face)
    (cons "\\?\\?\\?" font-lock-comment-face)
-   (cons "\\(template\\|name\\|class\\)" font-lock-comment-face))
+   (cons "\\(background-image\\|class\\|count\\|layout\\|name\\|template\\)" font-lock-comment-face))
   "Keyword highlight for `remark-mode'.")
 
 ;;;###autoload
