@@ -24,7 +24,30 @@ Dependencies
 Todo
 
 - [x] Use `xdg-open` instead of `open` on linux, `open` is os x only? Or the built in `(browse-url url)`.
+- [x] Show visited slide in browser (os x)
+- [ ] Support custom index.html files in same folder as .remark file to allow for images
 
-History
+Changelog
 
-- 2015-09-07: Version: 1.0.0
+- 2017-11-27: v1.5.0:
+Handle layout: true to always show the correct slide in the browser
+
+- 2017-11-27: v1.4.0:
+Support background-image, count and layout keywords in highlighting
+
+- 2017-11-27: v1.3.0:
+Automatically visit slide under cursor in browser, not just on M-n and M-p
+
+- 2017-11-26: v1.2.4:
+Expose remark-preferred-browser as var
+
+- 2017-11-26: v1.1.4:
+Visit slide in browser on M-n and M-p
+
+- 2017-11-26: v1.0.4:
+Fix invalid syntax
+
+- 2017-11-26: v1.0.3:
+Reload on all saves, not just C-x C-s
+
+- 2015-09-07: v1.0.0

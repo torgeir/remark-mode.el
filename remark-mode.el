@@ -3,9 +3,9 @@
 ;; Copyright (C) 2015 Torgeir Thoresen
 
 ;; Author: @torgeir
-;; Version: 1.4.0
+;; Version: 1.5.0
 ;; Keywords: remark, slideshow, markdown
-;; Package-Requires: ((markdown-mode "2.0"))
+;; Package-Requires: ((emacs "25.1") (markdown-mode "2.0"))
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -29,6 +29,7 @@
 
 ;;; Code:
 
+(require 'seq)
 (require 'markdown-mode)
 
 (defconst remark--is-osx (equal system-type 'darwin))
@@ -144,11 +145,15 @@
 (defun remark-visit-slide-in-browser ()
   "Visit slide at point in browser."
   (interactive)
-  (let ((slides (split-string
-                 (buffer-substring (point-min)
-                                   (min (point-max) (+ (point) 3)))
-                 "---")))
-    (remark--osascript-show-slide (length slides))))
+  (let* ((lines (split-string (buffer-substring (point-min) (point)) "\n"))
+         (slide-lines (seq-filter (lambda (line)
+                                    (or (string-prefix-p "layout: true" line)
+                                        (string-prefix-p "---" line)))
+                                  lines)))
+    (remark--osascript-show-slide
+     (max 1 (seq-reduce #'+ (seq-map (lambda (line)
+                                       (if (string-prefix-p "layout: true" line) -1 1))
+                                     slide-lines) 1)))))
 
 (defun remark-visit-slide-if-cursor-moved ()
   "Visit slide in browser if position in remark buffer has changed."
