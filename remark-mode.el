@@ -3,7 +3,7 @@
 ;; Copyright (C) 2015 Torgeir Thoresen
 
 ;; Author: @torgeir
-;; Version: 1.6.0
+;; Version: 1.7.0
 ;; Keywords: remark, slideshow, markdown, hot reload
 ;; Package-Requires: ((emacs "25.1") (markdown-mode "2.0"))
 
@@ -32,11 +32,13 @@
 (require 'seq)
 (require 'markdown-mode)
 
-(defconst remark--is-osx (equal system-type 'darwin))
-
 (defvar remark-preferred-browser
   "Google Chrome"
   "The applescript name of the application that the user's default browser.")
+
+(defvar remark--folder
+  (file-name-directory (locate-file "remark-mode.el" load-path))
+  "Folder containing default remark skeleton file remark.html.")
 
 (defvar remark--last-cursor-pos 0
   "The last recorded position in a .remark buffer.")
@@ -44,39 +46,35 @@
 (defvar remark--last-move-timer nil
   "The last queued timer to visit the slide after cursor move.")
 
-(defun remark-util-is-point-at-end-of-buffer ()
-  "Check if point is at end of file."
-  (= (point) (point-max)))
+(defconst remark--is-osx (equal system-type 'darwin)
+  "Is ‘remark-mode’ running on os x.")
 
-(defun remark-util-replace-string (old new s)
-  "Replace OLD with NEW in S."
-  (replace-regexp-in-string (regexp-quote old) new s t t))
-
-(defun remark-util-file-as-string (file-path)
+(defun remark--file-as-string (file-path)
   "Get file contents from file at FILE-PATH as string."
-  (with-temp-buffer
-    (insert-file-contents file-path)
-    (buffer-string)))
+  (when (file-exists-p file-path)
+    (with-temp-buffer
+      (insert-file-contents file-path)
+      (buffer-string))))
 
 (defun remark-next-slide ()
   "Skip to next slide."
   (interactive)
   (end-of-line)
-  (if (search-forward-regexp "---" nil t)
+  (if (search-forward-regexp "^--" nil t)
       (move-beginning-of-line 1)
     (end-of-buffer)))
 
 (defun remark-prev-slide ()
   "Skip to prev slide."
   (interactive)
-  (if (search-backward-regexp "---" nil t)
+  (if (search-backward-regexp "^--" nil t)
       (move-beginning-of-line 1)
     (beginning-of-buffer)))
 
 (defun remark-new-separator (sep)
   "Add separator SEP at end of next slide."
   (remark-next-slide)
-  (if (remark-util-is-point-at-end-of-buffer)
+  (if (= (point) (point-max))
       (insert (concat "\n" sep "\n"))
     (progn
       (insert (concat sep "\n\n"))
@@ -115,25 +113,37 @@
       (move-beginning-of-line nil))
     (save-buffer)))
 
-(defcustom remark-folder
-  (file-name-directory (locate-file "remark-mode.el" load-path))
-  "Folder containing remark skeleton file remark.html."
-  :type 'string
-  :group 'remark)
+(defun remark--output-file-name ()
+  "Optional user provided index.html file to write html slide set back to."
+  (concat (file-name-directory (buffer-file-name)) "index.html"))
 
-(defun remark-reload-in-browser ()
-  "Preview slideshow in browser."
-  (interactive)
-  (let* ((remark-file (concat remark-folder "remark.html"))
-         (template-content (remark-util-file-as-string remark-file))
-         (index-content (remark-util-replace-string
-                         "</textarea>"
-                         (concat (buffer-string) "</textarea>")
-                         template-content))
-         (index-file (concat remark-folder "index.html"))
-         (index-file-nosymlink (file-truename index-file)))
-    (write-region index-content nil index-file-nosymlink nil)
-    (shell-command "browser-sync reload")))
+(defun remark--write-output-file (template-file content out-file)
+  "Weave TEMPLATE-FILE together with CONTENT to create slide show. Write the result to OUT-FILE."
+  (when-let (template-file-content (remark--file-as-string template-file))
+    (let* ((positions (with-temp-buffer
+                        (insert template-file-content)
+                        (cons
+                         (progn (beginning-of-buffer)
+                                (search-forward "<textarea id=\"source\">")
+                                (- (point) 1))
+                         (progn (end-of-buffer)
+                                (search-backward "</textarea>")
+                                (- (point) 1)))))
+           (textarea-start (car positions))
+           (textarea-end (cdr positions)))
+      (let ((out-file-content (concat (substring template-file-content 0 textarea-start)
+                                      content
+                                      (substring template-file-content textarea-end (length template-file-content)))))
+        (write-region out-file-content nil (or out-file template-file) nil)))))
+
+(defun remark--write-output-files ()
+  "Write the remark output index.html file to the same folder as the .remark file for the resulting slide show."
+  (let* ((default-remark-template (concat remark--folder "remark.html"))
+         (user-out-file (file-truename (remark--output-file-name)))
+         (markdown (buffer-string)))
+    (remark--write-output-file (if (file-exists-p user-out-file)
+                                   user-out-file
+                                 default-remark-template) markdown user-out-file)))
 
 (defun remark--run-osascript (s)
   "Run applescript S."
@@ -146,64 +156,63 @@
            remark-preferred-browser
            n)))
 
+(defun remark--is-connected ()
+  "Check if ‘remark-mode’ is connected to browser sync."
+  (get-buffer "*remark browser-sync*"))
+
 (defun remark-visit-slide-in-browser ()
   "Visit slide at point in browser."
   (interactive)
-  (let* ((lines (split-string (buffer-substring (point-min) (point)) "\n"))
-         (slide-lines (seq-filter (lambda (line)
-                                    (or (string-prefix-p "layout: true" line)
-                                        (string-prefix-p "---" line)))
-                                  lines)))
-    (remark--osascript-show-slide
-     (max 1 (seq-reduce #'+ (seq-map (lambda (line)
-                                       (if (string-prefix-p "layout: true" line) -1 1))
-                                     slide-lines) 1)))))
+  (when (remark--is-connected)
+    (let* ((lines (split-string (buffer-substring (point-min) (point)) "\n"))
+           (slide-lines (seq-filter (lambda (line)
+                                      (or (string-prefix-p "layout: true" line)
+                                          (string-prefix-p "--" line)))
+                                    lines)))
+      (remark--osascript-show-slide
+       (max 1 (seq-reduce #'+ (seq-map (lambda (line)
+                                         (if (string-prefix-p "layout: true" line) -1 1))
+                                       slide-lines) 1))))))
 
-(defun remark-visit-slide-if-cursor-moved ()
-  "Visit slide in browser if position in remark buffer has changed."
-  (unless (equal (point) remark--last-cursor-pos)
-    (remark-visit-slide-in-browser))
-  (setq remark--last-cursor-pos (point)))
-
-(defun remark-post-command ()
+(defun remark--post-command ()
   "Post command hook that queues a slide visit after some amount of time has occurred."
-  (when (and (get-buffer "*remark browser-sync*")
+  (when (and (remark--is-connected)
              (string-suffix-p ".remark" buffer-file-name))
     (when remark--last-move-timer
       (cancel-timer remark--last-move-timer))
     (setq remark--last-move-timer
           (run-at-time "0.4 sec" nil (lambda ()
-                                       (remark-visit-slide-if-cursor-moved)
-                                       (setq remark--last-move-timer nil))))))
+                                       (remark--write-output-files)
+                                       (unless (equal (point) remark--last-cursor-pos)
+                                         (remark-visit-slide-in-browser))
+                                       (setq remark--last-cursor-pos (point)
+                                             remark--last-move-timer nil))))))
 
 (defun remark-connect-browser ()
   "Serve folder with browsersync."
   (interactive)
+  (remark--write-output-files)
   (async-shell-command
    (concat "browser-sync start --server "
-           (shell-quote-argument (file-truename remark-folder))
+           (shell-quote-argument (file-truename (file-name-directory (remark--output-file-name))))
            " --no-open --no-ui --no-online")
    "*remark browser-sync*"
    "*remark browser-sync error*")
   (sit-for 1)
   (message "remark browser-sync connected")
-  (remark-save)
   (browse-url "http://localhost:3000"))
 
-(defun remark-save ()
-  "Save the file and reloads in browser."
-  (interactive)
-  (save-buffer)
-  (if (get-buffer "*remark browser-sync*")
-      (remark-reload-in-browser)
-    (message
-     (concat "Wrote " buffer-file-name ". "
-             "Use C-c C-s c to connect to a browser using browser-sync!"))))
-
-(defun remark-save-hook ()
+(defun remark--save-hook ()
   "Hook to reload ‘remark-mode’ buffers when saved."
   (when (string-suffix-p ".remark" buffer-file-name)
-    (remark-save)))
+    (save-buffer)
+    (if (remark--is-connected)
+        (progn
+          (remark--write-output-files)
+          (unless remark--is-osx
+            (shell-command "browser-sync reload")))
+      (concat "Wrote " buffer-file-name ". "
+              "Use C-c C-s c to connect to a browser using browser-sync!"))))
 
 (defvar remark-mode-map
   (let ((map (make-sparse-keymap)))
@@ -244,10 +253,11 @@
                  remark-font-lock-defaults
                  markdown-mode-font-lock-keywords-math
                  markdown-mode-font-lock-keywords-basic)))
-    (add-hook 'after-save-hook 'remark-save-hook)
-    (make-variable-buffer-local 'remark--last-cursor-por)
-    (make-variable-buffer-local 'remark--last-move-timer)
-    (add-hook 'post-command-hook 'remark-post-command)))
+    (add-hook 'after-save-hook 'remark--save-hook)
+    (when remark--is-osx
+      (make-variable-buffer-local 'remark--last-cursor-por)
+      (make-variable-buffer-local 'remark--last-move-timer)
+      (add-hook 'post-command-hook 'remark--post-command))))
 
 (provide 'remark-mode)
 ;;; remark-mode.el ends here
