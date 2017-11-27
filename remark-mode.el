@@ -1,9 +1,9 @@
-;;; remark-mode.el --- Major mode for the remark slideshow tool
+;;; remark-mode.el --- Major mode for the remark slideshow tool -*- lexical-binding: t -*-
 
 ;; Copyright (C) 2015 Torgeir Thoresen
 
 ;; Author: @torgeir
-;; Version: 1.2.4
+;; Version: 1.3.0
 ;; Keywords: remark, slideshow, markdown
 ;; Package-Requires: ((markdown-mode "2.0"))
 
@@ -37,6 +37,12 @@
   "Google Chrome"
   "The applescript name of the application that the user's default browser.")
 
+(defvar remark--last-cursor-pos 0
+  "The last recorded position in a .remark buffer.")
+
+(defvar remark--last-move-timer nil
+  "The last queued timer to visit the slide after cursor move.")
+
 (defun remark-util-is-point-at-end-of-buffer ()
   "Check if point is at end of file."
   (= (point) (point-max)))
@@ -57,16 +63,14 @@
   (end-of-line)
   (if (search-forward-regexp "---" nil t)
       (move-beginning-of-line 1)
-    (end-of-buffer))
-  (when remark--is-osx (remark-visit-slide-in-browser)))
+    (end-of-buffer)))
 
 (defun remark-prev-slide ()
   "Skip to prev slide."
   (interactive)
   (if (search-backward-regexp "---" nil t)
       (move-beginning-of-line 1)
-    (beginning-of-buffer))
-  (when remark--is-osx (remark-visit-slide-in-browser)))
+    (beginning-of-buffer)))
 
 (defun remark-new-separator (sep)
   "Add separator SEP at end of next slide."
@@ -146,6 +150,23 @@
                  "---")))
     (remark--osascript-show-slide (length slides))))
 
+(defun remark-visit-slide-if-cursor-moved ()
+  "Visit slide in browser if position in remark buffer has changed."
+  (unless (equal (point) remark--last-cursor-pos)
+    (remark-visit-slide-in-browser))
+  (setq remark--last-cursor-pos (point)))
+
+(defun remark-post-command ()
+  "Post command hook that queues a slide visit after some amount of time has occurred."
+  (when (and (get-buffer "*remark browser-sync*")
+             (string-suffix-p ".remark" buffer-file-name))
+    (when remark--last-move-timer
+      (cancel-timer remark--last-move-timer))
+    (setq remark--last-move-timer
+          (run-at-time "0.4 sec" nil (lambda ()
+                                       (remark-visit-slide-if-cursor-moved)
+                                       (setq remark--last-move-timer nil))))))
+
 (defun remark-connect-browser ()
   "Serve folder with browsersync."
   (interactive)
@@ -214,7 +235,10 @@
                  remark-font-lock-defaults
                  markdown-mode-font-lock-keywords-math
                  markdown-mode-font-lock-keywords-basic)))
-    (add-hook 'after-save-hook 'remark-save-hook)))
+    (add-hook 'after-save-hook 'remark-save-hook)
+    (make-variable-buffer-local 'remark--last-cursor-por)
+    (make-variable-buffer-local 'remark--last-move-timer)
+    (add-hook 'post-command-hook 'remark-post-command)))
 
 (provide 'remark-mode)
 ;;; remark-mode.el ends here
