@@ -3,7 +3,7 @@
 ;; Copyright (C) 2015 Torgeir Thoresen
 
 ;; Author: @torgeir
-;; Version: 1.7.0
+;; Version: 1.8.0
 ;; Keywords: remark, slideshow, markdown, hot reload
 ;; Package-Requires: ((emacs "25.1") (markdown-mode "2.0"))
 
@@ -147,14 +147,30 @@
 
 (defun remark--run-osascript (s)
   "Run applescript S."
-  (shell-command (format "osascript -e '%s'" s)))
+  (replace-regexp-in-string
+   "[\r\n]+"
+   ""
+   (shell-command-to-string
+    (format "osascript -e '%s'" s))))
+
+(defun remark--osascript-get-frontmost-url ()
+  (remark--run-osascript
+   (format "tell application \"%s\" to get URL of active tab of first window"
+           remark-preferred-browser)))
+
+(defun remark--is-frontmost-url-remark ()
+  (string-prefix-p "http://localhost:3000/#" (remark--osascript-get-frontmost-url)))
 
 (defun remark--osascript-show-slide (n)
   "Run applescript to make browser navigate to slide N."
-  (remark--run-osascript
-   (format "tell application \"%s\" to set URL of active tab of window 1 to \"http://localhost:3000/#p%s\""
-           remark-preferred-browser
-           n)))
+  (let* ((url (remark--osascript-get-frontmost-url))
+         (slide (cadr (split-string url "#")))
+         (presenter-mode (replace-regexp-in-string "[0-9]+" "" slide))
+         (next-slide-url (concat "http://localhost:3000/#" presenter-mode (number-to-string n))))
+    (remark--run-osascript
+     (format "tell application \"%s\" to set URL of active tab of window 1 to \"%s\""
+             remark-preferred-browser
+             next-slide-url))))
 
 (defun remark--is-connected ()
   "Check if ‘remark-mode’ is connected to browser sync."
@@ -163,7 +179,8 @@
 (defun remark-visit-slide-in-browser ()
   "Visit slide at point in browser."
   (interactive)
-  (when (remark--is-connected)
+  (when (and (remark--is-connected)
+             (remark--is-frontmost-url-remark))
     (let* ((lines (split-string (buffer-substring (point-min) (point)) "\n"))
            (slide-lines (seq-filter (lambda (line)
                                       (or (string-prefix-p "layout: true" line)

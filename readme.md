@@ -26,11 +26,13 @@ Todo
 - [x] Use `xdg-open` instead of `open` on linux, `open` is os x only? Or the built in `(browse-url url)`.
 - [x] Show visited slide in browser (os x)
 - [x] Support custom index.html files in same folder as .remark file to allow for images
+- [x] Don't always enter presentation mode, keep it if its on, don't turn it on if its off
 - [ ] Support moving slides around
-- [ ] Don't always enter presentation mode, keep it if its on, don't turn it on
-  if its off
 
 Changelog
+- 2017-11-28: v1.8.0:
+Remember if presentation mode is on or off when changing slides. Only change slides in the browser if the remark tab is frontmost.
+
 - 2017-11-27: v1.7.0:
 Run slideshow from the folder of the user's .remark file. Output slides in the template index.html provided in the same folder, or create a skeleton index.html if no such file exist.
 
