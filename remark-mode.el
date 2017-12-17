@@ -3,7 +3,7 @@
 ;; Copyright (C) 2015 Torgeir Thoresen
 
 ;; Author: @torgeir
-;; Version: 1.8.0
+;; Version: 1.9.0
 ;; Keywords: remark, slideshow, markdown, hot reload
 ;; Package-Requires: ((emacs "25.1") (markdown-mode "2.0"))
 
@@ -56,18 +56,18 @@
       (insert-file-contents file-path)
       (buffer-string))))
 
-(defun remark-next-slide ()
+(defun remark-next-slide (&optional arg)
   "Skip to next slide."
-  (interactive)
+  (interactive "P")
   (end-of-line)
-  (if (search-forward-regexp "^--" nil t)
+  (if (search-forward-regexp (if arg "^--" "^---") nil t)
       (move-beginning-of-line 1)
     (end-of-buffer)))
 
-(defun remark-prev-slide ()
+(defun remark-prev-slide (&optional arg)
   "Skip to prev slide."
-  (interactive)
-  (if (search-backward-regexp "^--" nil t)
+  (interactive "P")
+  (if (search-backward-regexp (if arg "^--" "^---") nil t)
       (move-beginning-of-line 1)
     (beginning-of-buffer)))
 
@@ -112,6 +112,34 @@
                      (point-max)))
       (move-beginning-of-line nil))
     (save-buffer)))
+
+(defun remark--is-last-slide ()
+  "Check if the point is inside of the last slide."
+  (interactive)
+  (save-excursion
+    (remark-prev-slide)
+    (remark-next-slide)
+    (= (point) (point-max))))
+
+(defun remark-move-slide-next ()
+  "Move the slide past the next slide."
+  (interactive)
+  (when (not (or (remark--is-last-slide)
+                 (save-excursion
+                   (end-of-line)
+                   (= (point-max) (point)))))
+    (remark-kill-slide)
+    (remark-next-slide)
+    (yank)))
+
+(defun remark-move-slide-prev ()
+  "Move the slide in front of the previous slide."
+  (interactive)
+  (remark-kill-slide)
+  (remark-prev-slide)
+  (yank)
+  (when (not (looking-at "^"))
+    (newline)))
 
 (defun remark--output-file-name ()
   "Optional user provided index.html file to write html slide set back to."
@@ -235,6 +263,10 @@
   (let ((map (make-sparse-keymap)))
     (define-key map (kbd "M-n") 'remark-next-slide)
     (define-key map (kbd "M-p") 'remark-prev-slide)
+    (define-key map (kbd "M-<down>") 'remark-next-slide)
+    (define-key map (kbd "M-<up>") 'remark-prev-slide)
+    (define-key map (kbd "M-S-<down>") 'remark-move-slide-next)
+    (define-key map (kbd "M-S-<up>") 'remark-move-slide-prev)
     (define-key map (kbd "C-c C-s s") 'remark-new-slide)
     (define-key map (kbd "C-c C-s i") 'remark-new-incremental-slide)
     (define-key map (kbd "C-c C-s k") 'remark-kill-slide)

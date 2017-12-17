@@ -6,8 +6,10 @@ A major mode for [remark](https://github.com/gnab/remark) - the simple, in-brows
 
 Key bindings
 
-- `M-n` next slide
-- `M-p` prev slide
+- `M-n` or `M-<down>` next slide
+- `M-p` or `M-<up>` prev slide
+- `M-S-<down>` move slide down
+- `M-S-<up>` move slide up
 - `C-x C-s` save and reload
 - `C-c C-s s` new slide
 - `C-c C-s i` new incremental slide
@@ -27,9 +29,12 @@ Todo
 - [x] Show visited slide in browser (os x)
 - [x] Support custom index.html files in same folder as .remark file to allow for images
 - [x] Don't always enter presentation mode, keep it if its on, don't turn it on if its off
-- [ ] Support moving slides around
+- [x] Support moving slides around
 
 Changelog
+- 2017-12-17: v1.9.0:
+Support moving slides around with M-S-<down> and M-S-<up>
+
 - 2017-11-28: v1.8.0:
 Remember if presentation mode is on or off when changing slides. Only change slides in the browser if the remark tab is frontmost.
 
