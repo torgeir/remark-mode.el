@@ -3,7 +3,7 @@
 ;; Copyright (C) 2015 Torgeir Thoresen
 
 ;; Author: @torgeir
-;; Version: 1.9.0
+;; Version: 1.9.1
 ;; Keywords: remark, slideshow, markdown, hot reload
 ;; Package-Requires: ((emacs "25.1") (markdown-mode "2.0"))
 
@@ -130,7 +130,8 @@
                    (= (point-max) (point)))))
     (remark-kill-slide)
     (remark-next-slide)
-    (yank)))
+    (yank)
+    (remark-visit-slide-in-browser)))
 
 (defun remark-move-slide-prev ()
   "Move the slide in front of the previous slide."
@@ -139,7 +140,8 @@
   (remark-prev-slide)
   (yank)
   (when (not (looking-at "^"))
-    (newline)))
+    (newline))
+  (remark-visit-slide-in-browser))
 
 (defun remark--output-file-name ()
   "Optional user provided index.html file to write html slide set back to."
