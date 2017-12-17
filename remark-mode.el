@@ -3,7 +3,7 @@
 ;; Copyright (C) 2015 Torgeir Thoresen
 
 ;; Author: @torgeir
-;; Version: 1.9.1
+;; Version: 1.9.2
 ;; Keywords: remark, slideshow, markdown, hot reload
 ;; Package-Requires: ((emacs "25.1") (markdown-mode "2.0"))
 
@@ -40,7 +40,7 @@
   (file-name-directory (locate-file "remark-mode.el" load-path))
   "Folder containing default remark skeleton file remark.html.")
 
-(defvar remark--last-cursor-pos 0
+(defvar remark--last-cursor-pos 1
   "The last recorded position in a .remark buffer.")
 
 (defvar remark--last-move-timer nil
@@ -104,13 +104,16 @@
   (remark-prev-slide)
   (let ((current-slide-start (point)))
     (next-line)
-    (let* ((has-next-slide-marker (search-forward-regexp "---" nil t))
+    (let* ((has-next-slide-marker (search-forward-regexp "^---" nil t))
            (next-slide-start (match-beginning 0)))
       (kill-region current-slide-start
                    (if has-next-slide-marker
                        next-slide-start
                      (point-max)))
       (move-beginning-of-line nil))
+    (when (and (= (point) (point-min))
+               (looking-at "^---"))
+      (delete-region (line-beginning-position) (1+ (line-end-position))))
     (save-buffer)))
 
 (defun remark--is-last-slide ()
@@ -130,7 +133,13 @@
                    (= (point-max) (point)))))
     (remark-kill-slide)
     (remark-next-slide)
-    (yank)
+    (let ((slide (with-temp-buffer
+                   (yank)
+                   (beginning-of-buffer)
+                   (when (not (looking-at "^---"))
+                     (insert "---\n"))
+                   (buffer-string))))
+      (insert slide))
     (remark-visit-slide-in-browser)))
 
 (defun remark-move-slide-prev ()
@@ -138,7 +147,17 @@
   (interactive)
   (remark-kill-slide)
   (remark-prev-slide)
-  (yank)
+  (if (= (point) (point-min))
+      (let ((slide (with-temp-buffer
+                     (yank)
+                     (beginning-of-buffer)
+                     (when (looking-at "^---")
+                       (delete-region (line-beginning-position) (1+ (line-end-position))))
+                     (buffer-string))))
+        (insert slide)
+        (insert "---\n")
+        (previous-line))
+    (yank))
   (when (not (looking-at "^"))
     (newline))
   (remark-visit-slide-in-browser))
@@ -229,11 +248,16 @@
       (cancel-timer remark--last-move-timer))
     (setq remark--last-move-timer
           (run-at-time "0.4 sec" nil (lambda ()
-                                       (remark--write-output-files)
-                                       (unless (equal (point) remark--last-cursor-pos)
-                                         (remark-visit-slide-in-browser))
-                                       (setq remark--last-cursor-pos (point)
-                                             remark--last-move-timer nil))))))
+                                       (when (and (remark--is-connected)
+                                                  (string-suffix-p ".remark" buffer-file-name))
+                                         (remark--write-output-files)
+                                         (when (and (not (equal (point) remark--last-cursor-pos))
+                                                    (string-match-p "^--"
+                                                                    (buffer-substring (min (point) (min (point-max) remark--last-cursor-pos))
+                                                                                      (max (point) (min (point-max) remark--last-cursor-pos)))))
+                                           (remark-visit-slide-in-browser))
+                                         (setq remark--last-cursor-pos (point)
+                                               remark--last-move-timer nil)))))))
 
 (defun remark-connect-browser ()
   "Serve folder with browsersync."
@@ -256,7 +280,8 @@
     (if (remark--is-connected)
         (progn
           (remark--write-output-files)
-          (unless remark--is-osx
+          (if remark--is-osx
+              (remark-visit-slide-in-browser)
             (shell-command "browser-sync reload")))
       (concat "Wrote " buffer-file-name ". "
               "Use C-c C-s c to connect to a browser using browser-sync!"))))
@@ -304,11 +329,11 @@
                  remark-font-lock-defaults
                  markdown-mode-font-lock-keywords-math
                  markdown-mode-font-lock-keywords-basic)))
-    (add-hook 'after-save-hook 'remark--save-hook)
+    (add-hook 'after-save-hook #'remark--save-hook)
     (when remark--is-osx
       (make-variable-buffer-local 'remark--last-cursor-por)
       (make-variable-buffer-local 'remark--last-move-timer)
-      (add-hook 'post-command-hook 'remark--post-command))))
+      (add-hook 'post-command-hook #'remark--post-command))))
 
 (provide 'remark-mode)
 ;;; remark-mode.el ends here
