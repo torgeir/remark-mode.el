@@ -32,22 +32,28 @@
 (require 'seq)
 (require 'markdown-mode)
 
+
 (defvar remark-preferred-browser
   "Google Chrome"
   "The applescript name of the application that the user's default browser.")
+
 
 (defvar remark--folder
   (file-name-directory (locate-file "remark-mode.el" load-path))
   "Folder containing default remark skeleton file remark.html.")
 
+
 (defvar remark--last-cursor-pos 1
   "The last recorded position in a .remark buffer.")
+
 
 (defvar remark--last-move-timer nil
   "The last queued timer to visit the slide after cursor move.")
 
+
 (defconst remark--is-osx (equal system-type 'darwin)
   "Is ‘remark-mode’ running on os x.")
+
 
 (defun remark--file-as-string (file-path)
   "Get file contents from file at FILE-PATH as string."
@@ -55,6 +61,7 @@
     (with-temp-buffer
       (insert-file-contents file-path)
       (buffer-string))))
+
 
 (defun remark-next-slide (&optional arg)
   "Skip to next slide."
@@ -64,12 +71,14 @@
       (move-beginning-of-line 1)
     (end-of-buffer)))
 
+
 (defun remark-prev-slide (&optional arg)
   "Skip to prev slide."
   (interactive "P")
   (if (search-backward-regexp (if arg "^--" "^---") nil t)
       (move-beginning-of-line 1)
     (beginning-of-buffer)))
+
 
 (defun remark-new-separator (sep)
   "Add separator SEP at end of next slide."
@@ -80,11 +89,13 @@
       (insert (concat sep "\n\n"))
       (previous-line))))
 
+
 (defun remark-new-slide ()
   "Create new slide."
   (interactive)
   (remark-new-separator "---")
   (save-buffer))
+
 
 (defun remark-create-note ()
   "Create note for slide."
@@ -92,11 +103,13 @@
   (remark-new-separator "???")
   (save-buffer))
 
+
 (defun remark-new-incremental-slide ()
   "Create new incremental slide."
   (interactive)
   (remark-new-separator "--")
   (save-buffer))
+
 
 (defun remark-kill-slide ()
   "Kill the current slide."
@@ -116,6 +129,7 @@
       (delete-region (line-beginning-position) (1+ (line-end-position))))
     (save-buffer)))
 
+
 (defun remark--is-last-slide ()
   "Check if the point is inside of the last slide."
   (interactive)
@@ -123,6 +137,7 @@
     (remark-prev-slide)
     (remark-next-slide)
     (= (point) (point-max))))
+
 
 (defun remark-move-slide-next ()
   "Move the slide past the next slide."
@@ -141,6 +156,7 @@
                    (buffer-string))))
       (insert slide))
     (remark-visit-slide-in-browser)))
+
 
 (defun remark-move-slide-prev ()
   "Move the slide in front of the previous slide."
@@ -162,9 +178,11 @@
     (newline))
   (remark-visit-slide-in-browser))
 
+
 (defun remark--output-file-name ()
   "Optional user provided index.html file to write html slide set back to."
   (concat (file-name-directory (buffer-file-name)) "index.html"))
+
 
 (defun remark--write-output-file (template-file content out-file)
   "Weave TEMPLATE-FILE together with CONTENT to create slide show. Write the result to OUT-FILE."
@@ -185,6 +203,7 @@
                                       (substring template-file-content textarea-end (length template-file-content)))))
         (write-region out-file-content nil (or out-file template-file) nil)))))
 
+
 (defun remark--write-output-files ()
   "Write the remark output index.html file to the same folder as the .remark file for the resulting slide show."
   (let* ((default-remark-template (concat remark--folder "remark.html"))
@@ -194,6 +213,7 @@
                                    user-out-file
                                  default-remark-template) markdown user-out-file)))
 
+
 (defun remark--run-osascript (s)
   "Run applescript S."
   (replace-regexp-in-string
@@ -202,13 +222,16 @@
    (shell-command-to-string
     (format "osascript -e '%s'" s))))
 
+
 (defun remark--osascript-get-frontmost-url ()
   (remark--run-osascript
    (format "tell application \"%s\" to get URL of active tab of first window"
            remark-preferred-browser)))
 
+
 (defun remark--is-frontmost-url-remark ()
   (string-prefix-p "http://localhost:3000/#" (remark--osascript-get-frontmost-url)))
+
 
 (defun remark--osascript-show-slide (n)
   "Run applescript to make browser navigate to slide N."
@@ -221,9 +244,11 @@
              remark-preferred-browser
              next-slide-url))))
 
+
 (defun remark--is-connected ()
   "Check if ‘remark-mode’ is connected to browser sync."
   (get-buffer "*remark browser-sync*"))
+
 
 (defun remark-visit-slide-in-browser ()
   "Visit slide at point in browser."
@@ -239,6 +264,7 @@
        (max 1 (seq-reduce #'+ (seq-map (lambda (line)
                                          (if (string-prefix-p "layout: true" line) -1 1))
                                        slide-lines) 1))))))
+
 
 (defun remark--post-command ()
   "Post command hook that queues a slide visit after some amount of time has occurred."
@@ -259,6 +285,7 @@
                                          (setq remark--last-cursor-pos (point)
                                                remark--last-move-timer nil)))))))
 
+
 (defun remark-connect-browser ()
   "Serve folder with browsersync."
   (interactive)
@@ -273,6 +300,7 @@
   (message "remark browser-sync connected")
   (browse-url "http://localhost:3000"))
 
+
 (defun remark--save-hook ()
   "Hook to reload ‘remark-mode’ buffers when saved."
   (when (string-suffix-p ".remark" buffer-file-name)
@@ -285,6 +313,7 @@
             (shell-command "browser-sync reload")))
       (concat "Wrote " buffer-file-name ". "
               "Use C-c C-s c to connect to a browser using browser-sync!"))))
+
 
 (defvar remark-mode-map
   (let ((map (make-sparse-keymap)))
@@ -302,9 +331,11 @@
     map)
   "Keymap for `remark-mode'.")
 
+
 (defvar remark-mode-syntax-table
   (let ((st (make-syntax-table))) st)
   "Syntax table for `remark-mode'.")
+
 
 (defconst remark-font-lock-defaults
   (list
@@ -313,8 +344,10 @@
    (cons "\\(background-image\\|class\\|count\\|layout\\|name\\|template\\)" font-lock-comment-face))
   "Keyword highlight for `remark-mode'.")
 
+
 ;;;###autoload
 (add-to-list 'auto-mode-alist '("\\.remark\\'" . remark-mode))
+
 
 ;;;###autoload
 (define-derived-mode
@@ -334,6 +367,7 @@
       (make-variable-buffer-local 'remark--last-cursor-por)
       (make-variable-buffer-local 'remark--last-move-timer)
       (add-hook 'post-command-hook #'remark--post-command))))
+
 
 (provide 'remark-mode)
 ;;; remark-mode.el ends here
