@@ -15,16 +15,18 @@ Key bindings
 - `C-c C-s i` new incremental slide
 - `C-c C-s k` kill slide
 - `C-c C-s n` create note
+- `C-c C-s p` toggle presenter mode
 - `C-c C-s c` connect browser
+- `C-c C-s d` disconnect browser
 
 Dependencies
 
 - [markdown-mode](https://github.com/defunkt/markdown-mode)
-- node+npm
-- [browser-sync](http://www.browsersync.io/) (`npm i -g browser-sync`)
+- node
 
 Todo
 
+- [x] Support other platforms than os x.
 - [x] Use `xdg-open` instead of `open` on linux, `open` is os x only? Or the built in `(browse-url url)`.
 - [x] Show visited slide in browser (os x)
 - [x] Support custom index.html files in same folder as .remark file to allow for images
@@ -32,6 +34,9 @@ Todo
 - [x] Support moving slides around
 
 Changelog
+- 2019-11-03: v2.0.0
+Reimplement browser synchronization in custom node server to drop dependency for browser-sync and support other platforms than os x. C-c C-s d to disconnect from browser. C-c C-s p to toggle presenter mode. Close the window when disconnecting from the slideshow on os x.
+
 - 2017-12-17: v1.9.0:
 Support moving slides around with M-S-<down> and M-S-<up>
 

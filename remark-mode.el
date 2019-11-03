@@ -3,7 +3,7 @@
 ;; Copyright (C) 2015 Torgeir Thoresen
 
 ;; Author: @torgeir
-;; Version: 1.9.2
+;; Version: 2.0.0
 ;; Keywords: remark, slideshow, markdown, hot reload
 ;; Package-Requires: ((emacs "25.1") (markdown-mode "2.0"))
 
@@ -33,11 +33,6 @@
 (require 'markdown-mode)
 
 
-(defvar remark-preferred-browser
-  "Google Chrome"
-  "The applescript name of the application that the user's default browser.")
-
-
 (defvar remark--folder
   (file-name-directory (locate-file "remark-mode.el" load-path))
   "Folder containing default remark skeleton file remark.html.")
@@ -51,8 +46,15 @@
   "The last queued timer to visit the slide after cursor move.")
 
 
-(defconst remark--is-osx (equal system-type 'darwin)
-  "Is ‘remark-mode’ running on os x.")
+(defvar remark--is-presenter nil
+  "Is presenter mode enabled in the slideset.")
+
+
+(defun remark-toggle-presenter ()
+  "Toggle remark presenter mode. Reloads the slideset."
+  (interactive)
+  (setq remark--is-presenter (not remark--is-presenter))
+  (remark--show-slide (remark--current-slide) t))
 
 
 (defun remark--file-as-string (file-path)
@@ -64,7 +66,8 @@
 
 
 (defun remark-next-slide (&optional arg)
-  "Skip to next slide."
+  "Skip to next slide.
+Optional argument ARG skips to next incremental slide."
   (interactive "P")
   (end-of-line)
   (if (search-forward-regexp (if arg "^--" "^---") nil t)
@@ -73,7 +76,8 @@
 
 
 (defun remark-prev-slide (&optional arg)
-  "Skip to prev slide."
+  "Skip to prev slide.
+Optional argument ARG skips to previous incremental slide."
   (interactive "P")
   (if (search-backward-regexp (if arg "^--" "^---") nil t)
       (move-beginning-of-line 1)
@@ -214,56 +218,80 @@
                                  default-remark-template) markdown user-out-file)))
 
 
-(defun remark--run-osascript (s)
-  "Run applescript S."
-  (replace-regexp-in-string
-   "[\r\n]+"
-   ""
-   (shell-command-to-string
-    (format "osascript -e '%s'" s))))
+(defun remark--close-tab ()
+  "Close the slideset browser window, if on os x."
+  (if (and (eq system-type 'darwin)
+           (string-match-p
+            "http://localhost:3000"
+            (shell-command-to-string
+             "osascript -l JavaScript -e \"Application('Google Chrome').windows[0].activeTab().url()\"")))
+      (shell-command-to-string
+       "osascript -l JavaScript -e \"Application('Google Chrome').windows[0].activeTab().close()\"")))
 
 
-(defun remark--osascript-get-frontmost-url ()
-  (remark--run-osascript
-   (format "tell application \"%s\" to get URL of active tab of first window"
-           remark-preferred-browser)))
+(defun remark--current-slide ()
+  "Fetch the current slide from the .slide file."
+  (when-let ((slide (remark--file-as-string (remark--slide-file))))
+    (string-to-number
+     (replace-regexp-in-string
+      "p" ""
+      (replace-regexp-in-string
+       "reload" ""
+       (replace-regexp-in-string
+        "\n+" ""
+        slide))))))
 
 
-(defun remark--is-frontmost-url-remark ()
-  (string-prefix-p "http://localhost:3000/#" (remark--osascript-get-frontmost-url)))
+(defun remark--slide-to-file (slide f)
+  "Write SLIDE number to file F."
+  (let ((cmd (concat "echo "
+                     (shell-quote-argument (if (numberp slide)
+                                               (number-to-string slide)
+                                             slide))
+                     " > "
+                     (shell-quote-argument f))))
+    (shell-command cmd)))
 
 
-(defun remark--osascript-show-slide (n)
-  "Run applescript to make browser navigate to slide N."
-  (let* ((url (remark--osascript-get-frontmost-url))
-         (slide (cadr (split-string url "#")))
-         (presenter-mode (replace-regexp-in-string "[0-9]+" "" slide))
-         (next-slide-url (concat "http://localhost:3000/#" presenter-mode (number-to-string n))))
-    (remark--run-osascript
-     (format "tell application \"%s\" to set URL of active tab of window 1 to \"%s\""
-             remark-preferred-browser
-             next-slide-url))))
+(defun remark--slide-file ()
+  "Fetch path of the .slide file."
+  (concat (file-name-directory (buffer-file-name)) ".slide"))
+
+
+(defun remark--show-slide (n &optional reload)
+  "Run applescript to make browser navigate to slide N.
+Optional argument RELOAD reloads the slideshow in the browser."
+  (when n
+    (remark--slide-to-file (concat (if reload "reload" "")
+                                   (or (and remark--is-presenter
+                                            (concat "p" (number-to-string n)))
+                                       (number-to-string n)))
+                           (remark--slide-file))))
 
 
 (defun remark--is-connected ()
   "Check if ‘remark-mode’ is connected to browser sync."
-  (get-buffer "*remark browser-sync*"))
+  (get-buffer "*remark browser*"))
 
 
-(defun remark-visit-slide-in-browser ()
-  "Visit slide at point in browser."
+(defun remark-visit-slide-in-browser (&optional reload)
+  "Visit slide at point in browser.
+Optional argument RELOAD reloads the slideshow in the browser."
   (interactive)
-  (when (and (remark--is-connected)
-             (remark--is-frontmost-url-remark))
+  (when (remark--is-connected)
     (let* ((lines (split-string (buffer-substring (point-min) (point)) "\n"))
-           (slide-lines (seq-filter (lambda (line)
-                                      (or (string-prefix-p "layout: true" line)
-                                          (string-prefix-p "--" line)))
-                                    lines)))
-      (remark--osascript-show-slide
-       (max 1 (seq-reduce #'+ (seq-map (lambda (line)
-                                         (if (string-prefix-p "layout: true" line) -1 1))
-                                       slide-lines) 1))))))
+           (slide-lines
+            (seq-filter (lambda (line)
+                          (or (string-prefix-p "layout: true" line)
+                              (string-prefix-p "--" line)))
+                        lines)))
+      (remark--show-slide
+       (max 1 (seq-reduce #'+
+                          (seq-map (lambda (line)
+                                     (if (string-prefix-p "layout: true" line) -1 1))
+                                   slide-lines)
+                          1))
+       reload))))
 
 
 (defun remark--post-command ()
@@ -277,42 +305,52 @@
                                        (when (and (remark--is-connected)
                                                   (string-suffix-p ".remark" buffer-file-name))
                                          (remark--write-output-files)
-                                         (when (and (not (equal (point) remark--last-cursor-pos))
-                                                    (string-match-p "^--"
-                                                                    (buffer-substring (min (point) (min (point-max) remark--last-cursor-pos))
-                                                                                      (max (point) (min (point-max) remark--last-cursor-pos)))))
+                                         (when (and
+                                                (not (equal (point) remark--last-cursor-pos))
+                                                (string-match-p
+                                                 "^--"
+                                                 (buffer-substring (min (point) (min (point-max) remark--last-cursor-pos))
+                                                                   (max (point) (min (point-max) remark--last-cursor-pos)))))
                                            (remark-visit-slide-in-browser))
                                          (setq remark--last-cursor-pos (point)
                                                remark--last-move-timer nil)))))))
 
 
 (defun remark-connect-browser ()
-  "Serve folder with browsersync."
+  "Connect the <slideshow>.remark file to the in browser remark slide show."
   (interactive)
   (remark--write-output-files)
+  (remark--show-slide (or (remark--current-slide) 1))
   (async-shell-command
-   (concat "browser-sync start --server "
-           (shell-quote-argument (file-truename (file-name-directory (remark--output-file-name))))
-           " --no-open --no-ui --no-online")
-   "*remark browser-sync*"
-   "*remark browser-sync error*")
-  (sit-for 1)
-  (message "remark browser-sync connected")
+   (concat "node "
+           remark--folder
+           "server.js "
+           (file-name-directory buffer-file-name))
+   "*remark browser*"
+   "*remark browser error*")
+  (message "remark browser connected")
   (browse-url "http://localhost:3000"))
 
 
 (defun remark--save-hook ()
   "Hook to reload ‘remark-mode’ buffers when saved."
   (when (string-suffix-p ".remark" buffer-file-name)
-    (save-buffer)
     (if (remark--is-connected)
         (progn
           (remark--write-output-files)
-          (if remark--is-osx
-              (remark-visit-slide-in-browser)
-            (shell-command "browser-sync reload")))
+          (remark-visit-slide-in-browser t))
       (concat "Wrote " buffer-file-name ". "
-              "Use C-c C-s c to connect to a browser using browser-sync!"))))
+              "Use C-c C-s c to connect the slideshow to a browser! C-c C-s d to disconnect it."))))
+
+
+(defun remark-kill-browser ()
+  "Kill current buffer unconditionally."
+  (interactive)
+  (let ((buffer-modified-p nil)
+        (kill-buffer-query-functions (remq 'process-kill-buffer-query-function
+                                           kill-buffer-query-functions)))
+    (kill-buffer "*remark browser*")
+    (remark--close-tab)))
 
 
 (defvar remark-mode-map
@@ -323,11 +361,13 @@
     (define-key map (kbd "M-<up>") 'remark-prev-slide)
     (define-key map (kbd "M-S-<down>") 'remark-move-slide-next)
     (define-key map (kbd "M-S-<up>") 'remark-move-slide-prev)
+    (define-key map (kbd "C-c C-s p") 'remark-toggle-presenter)
     (define-key map (kbd "C-c C-s s") 'remark-new-slide)
     (define-key map (kbd "C-c C-s i") 'remark-new-incremental-slide)
     (define-key map (kbd "C-c C-s k") 'remark-kill-slide)
     (define-key map (kbd "C-c C-s n") 'remark-create-note)
     (define-key map (kbd "C-c C-s c") 'remark-connect-browser)
+    (define-key map (kbd "C-c C-s d") 'remark-kill-browser)
     map)
   "Keymap for `remark-mode'.")
 
@@ -339,6 +379,7 @@
 
 (defconst remark-font-lock-defaults
   (list
+   (cons "--" font-lock-warning-face)
    (cons "---" font-lock-warning-face)
    (cons "\\?\\?\\?" font-lock-comment-face)
    (cons "\\(background-image\\|class\\|count\\|layout\\|name\\|template\\)" font-lock-comment-face))
@@ -363,10 +404,9 @@
                  markdown-mode-font-lock-keywords-math
                  markdown-mode-font-lock-keywords-basic)))
     (add-hook 'after-save-hook #'remark--save-hook)
-    (when remark--is-osx
-      (make-variable-buffer-local 'remark--last-cursor-por)
-      (make-variable-buffer-local 'remark--last-move-timer)
-      (add-hook 'post-command-hook #'remark--post-command))))
+    (make-variable-buffer-local 'remark--last-cursor-por)
+    (make-variable-buffer-local 'remark--last-move-timer)
+    (add-hook 'post-command-hook #'remark--post-command)))
 
 
 (provide 'remark-mode)
