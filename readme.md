@@ -35,10 +35,10 @@ Todo
 
 Changelog
 - 2019-11-03: v2.0.0
-Reimplement browser synchronization in custom node server to drop dependency for browser-sync and support other platforms than os x. C-c C-s d to disconnect from browser. C-c C-s p to toggle presenter mode. Close the window when disconnecting from the slideshow on os x.
+Reimplement browser synchronization in custom node server to drop dependency for browser-sync and support other platforms than os x. `C-c C-s d` to disconnect from browser. `C-c C-s p` to toggle presenter mode. Close the window when disconnecting from the slideshow on os x.
 
 - 2017-12-17: v1.9.0:
-Support moving slides around with M-S-<down> and M-S-<up>
+Support moving slides around with `M-S-<down>` and `M-S-<up>`
 
 - 2017-11-28: v1.8.0:
 Remember if presentation mode is on or off when changing slides. Only change slides in the browser if the remark tab is frontmost.
@@ -57,7 +57,7 @@ Handle layout: true to always show the correct slide in the browser
 Support background-image, count and layout keywords in highlighting
 
 - 2017-11-27: v1.3.0:
-Automatically visit slide under cursor in browser, not just on M-n and M-p
+Automatically visit slide under cursor in browser, not just on `M-n` and `M-p`
 
 - 2017-11-26: v1.2.4:
 Expose remark-preferred-browser as var
