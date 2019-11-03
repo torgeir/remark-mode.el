@@ -26,12 +26,7 @@ Dependencies
 
 Todo
 
-- [x] Support other platforms than os x.
-- [x] Use `xdg-open` instead of `open` on linux, `open` is os x only? Or the built in `(browse-url url)`.
-- [x] Show visited slide in browser (os x)
-- [x] Support custom index.html files in same folder as .remark file to allow for images
-- [x] Don't always enter presentation mode, keep it if its on, don't turn it on if its off
-- [x] Support moving slides around
+Nothing planned.
 
 Changelog
 - 2019-11-03: v2.0.0
