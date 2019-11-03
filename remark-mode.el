@@ -47,7 +47,7 @@
 
 
 (defvar remark--is-presenter nil
-  "Is presenter mode enabled in the slideset.")
+  "Is presenter mode enabled in the slideshow.")
 
 
 (defun remark-toggle-presenter ()
