@@ -2,7 +2,7 @@
 
 A major mode for [remark](https://github.com/gnab/remark) - the simple, in-browser, markdown-driven slideshow tool
 
-<img src="https://raw.githubusercontent.com/torgeir/remark-mode.el/gh-pages/remark-demo.gif" />
+<img src="https://github.com/torgeir/remark-mode.el/raw/gh-pages/remark-demo.gif" />
 
 Key bindings
 
