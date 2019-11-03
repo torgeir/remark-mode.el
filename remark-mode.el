@@ -3,7 +3,7 @@
 ;; Copyright (C) 2015 Torgeir Thoresen
 
 ;; Author: @torgeir
-;; Version: 2.0.0
+;; Version: 2.0.1
 ;; Keywords: remark, slideshow, markdown, hot reload
 ;; Package-Requires: ((emacs "25.1") (markdown-mode "2.0"))
 
@@ -51,7 +51,7 @@
 
 
 (defun remark-toggle-presenter ()
-  "Toggle remark presenter mode. Reloads the slideset."
+  "Toggle remark presenter mode. Reloads the slideshow."
   (interactive)
   (setq remark--is-presenter (not remark--is-presenter))
   (remark--show-slide (remark--current-slide) t))
@@ -133,16 +133,6 @@ Optional argument ARG skips to previous incremental slide."
       (delete-region (line-beginning-position) (1+ (line-end-position))))
     (save-buffer)))
 
-
-(defun remark--is-last-slide ()
-  "Check if the point is inside of the last slide."
-  (interactive)
-  (save-excursion
-    (remark-prev-slide)
-    (remark-next-slide)
-    (= (point) (point-max))))
-
-
 (defun remark-move-slide-next ()
   "Move the slide past the next slide."
   (interactive)
@@ -183,13 +173,22 @@ Optional argument ARG skips to previous incremental slide."
   (remark-visit-slide-in-browser))
 
 
+(defun remark--is-last-slide ()
+  "Check if the point is inside of the last slide."
+  (interactive)
+  (save-excursion
+    (remark-prev-slide)
+    (remark-next-slide)
+    (= (point) (point-max))))
+
+
 (defun remark--output-file-name ()
   "Optional user provided index.html file to write html slide set back to."
   (concat (file-name-directory (buffer-file-name)) "index.html"))
 
 
 (defun remark--write-output-file (template-file content out-file)
-  "Weave TEMPLATE-FILE together with CONTENT to create slide show. Write the result to OUT-FILE."
+  "Weave TEMPLATE-FILE together with CONTENT to create slideshow. Write the result to OUT-FILE."
   (when-let (template-file-content (remark--file-as-string template-file))
     (let* ((positions (with-temp-buffer
                         (insert template-file-content)
@@ -209,7 +208,7 @@ Optional argument ARG skips to previous incremental slide."
 
 
 (defun remark--write-output-files ()
-  "Write the remark output index.html file to the same folder as the .remark file for the resulting slide show."
+  "Write the remark output index.html file to the same folder as the .remark file for the resulting slideshow."
   (let* ((default-remark-template (concat remark--folder "remark.html"))
          (user-out-file (file-truename (remark--output-file-name)))
          (markdown (buffer-string)))
@@ -219,7 +218,7 @@ Optional argument ARG skips to previous incremental slide."
 
 
 (defun remark--close-tab ()
-  "Close the slideset browser window, if on os x."
+  "Close the slideshow browser window, if on os x."
   (if (and (eq system-type 'darwin)
            (string-match-p
             "http://localhost:3000"
@@ -259,7 +258,7 @@ Optional argument ARG skips to previous incremental slide."
 
 
 (defun remark--show-slide (n &optional reload)
-  "Run applescript to make browser navigate to slide N.
+  "Write slide number to file to make browser navigate to slide N.
 Optional argument RELOAD reloads the slideshow in the browser."
   (when n
     (remark--slide-to-file (concat (if reload "reload" "")
@@ -270,7 +269,7 @@ Optional argument RELOAD reloads the slideshow in the browser."
 
 
 (defun remark--is-connected ()
-  "Check if ‘remark-mode’ is connected to browser sync."
+  "Check if ‘remark-mode’ is connected to the browser."
   (get-buffer "*remark browser*"))
 
 
@@ -317,7 +316,7 @@ Optional argument RELOAD reloads the slideshow in the browser."
 
 
 (defun remark-connect-browser ()
-  "Connect the <slideshow>.remark file to the in browser remark slide show."
+  "Connect the <slideshow>.remark file to the in browser remark slideshow."
   (interactive)
   (remark--write-output-files)
   (remark--show-slide (or (remark--current-slide) 1))
