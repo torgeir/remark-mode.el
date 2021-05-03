@@ -38,11 +38,11 @@
   "Folder containing default remark skeleton file remark.html.")
 
 
-(defvar remark--last-cursor-pos 1
+(defvar-local remark--last-cursor-pos 1
   "The last recorded position in a .remark buffer.")
 
 
-(defvar remark--last-move-timer nil
+(defvar-local remark--last-move-timer nil
   "The last queued timer to visit the slide after cursor move.")
 
 
@@ -72,7 +72,7 @@ Optional argument ARG skips to next incremental slide."
   (end-of-line)
   (if (search-forward-regexp (if arg "^--" "^---") nil t)
       (move-beginning-of-line 1)
-    (end-of-buffer)))
+    (goto-char (point-max))))
 
 
 (defun remark-prev-slide (&optional arg)
@@ -81,7 +81,7 @@ Optional argument ARG skips to previous incremental slide."
   (interactive "P")
   (if (search-backward-regexp (if arg "^--" "^---") nil t)
       (move-beginning-of-line 1)
-    (beginning-of-buffer)))
+    (goto-char (point-min))))
 
 
 (defun remark-new-separator (sep)
@@ -91,7 +91,7 @@ Optional argument ARG skips to previous incremental slide."
       (insert (concat "\n" sep "\n"))
     (progn
       (insert (concat sep "\n\n"))
-      (previous-line))))
+      (forward-line -1))))
 
 
 (defun remark-new-slide ()
@@ -120,7 +120,7 @@ Optional argument ARG skips to previous incremental slide."
   (interactive)
   (remark-prev-slide)
   (let ((current-slide-start (point)))
-    (next-line)
+    (forward-line)
     (let* ((has-next-slide-marker (search-forward-regexp "^---" nil t))
            (next-slide-start (match-beginning 0)))
       (kill-region current-slide-start
@@ -144,7 +144,7 @@ Optional argument ARG skips to previous incremental slide."
     (remark-next-slide)
     (let ((slide (with-temp-buffer
                    (yank)
-                   (beginning-of-buffer)
+                   (goto-char (point-min))
                    (when (not (looking-at "^---"))
                      (insert "---\n"))
                    (buffer-string))))
@@ -160,13 +160,13 @@ Optional argument ARG skips to previous incremental slide."
   (if (= (point) (point-min))
       (let ((slide (with-temp-buffer
                      (yank)
-                     (beginning-of-buffer)
+                     (goto-char (point-min))
                      (when (looking-at "^---")
                        (delete-region (line-beginning-position) (1+ (line-end-position))))
                      (buffer-string))))
         (insert slide)
         (insert "---\n")
-        (previous-line))
+        (forward-line -1))
     (yank))
   (when (not (looking-at "^"))
     (newline))
@@ -193,10 +193,10 @@ Optional argument ARG skips to previous incremental slide."
     (let* ((positions (with-temp-buffer
                         (insert template-file-content)
                         (cons
-                         (progn (beginning-of-buffer)
+                         (progn (goto-char (point-min))
                                 (search-forward "<textarea id=\"source\">")
                                 (- (point) 1))
-                         (progn (end-of-buffer)
+                         (progn (goto-char (point-max))
                                 (search-backward "</textarea>")
                                 (- (point) 1)))))
            (textarea-start (car positions))
@@ -342,6 +342,7 @@ Optional argument RELOAD reloads the slideshow in the browser."
               "Use C-c C-s c to connect the slideshow to a browser! C-c C-s d to disconnect it."))))
 
 
+(defvar buffer-modified-p)              ; prevent byte-compiler warning
 (defun remark-kill-browser ()
   "Kill current buffer unconditionally."
   (interactive)
@@ -396,15 +397,15 @@ Optional argument RELOAD reloads the slideshow in the browser."
   "remark"
   "A major mode for editing remark files."
   :syntax-table remark-mode-syntax-table
-  (progn
+  (let ((md-basic-fonts (if (boundp 'markdown-mode-font-lock-keywords-basic)
+                            markdown-mode-font-lock-keywords-basic
+                          markdown-mode-font-lock-keywords)))
     (setq font-lock-defaults
           (list (append
                  remark-font-lock-defaults
                  markdown-mode-font-lock-keywords-math
-                 markdown-mode-font-lock-keywords-basic)))
+                 md-basic-fonts)))
     (add-hook 'after-save-hook #'remark--save-hook)
-    (make-variable-buffer-local 'remark--last-cursor-por)
-    (make-variable-buffer-local 'remark--last-move-timer)
     (add-hook 'post-command-hook #'remark--post-command)))
 
 
