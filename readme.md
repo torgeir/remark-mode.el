@@ -29,6 +29,9 @@ Todo
 Nothing planned.
 
 Changelog
+- 2021-05-04: v2.0.2
+Fix byte-compiler warnings and void variable access.
+
 - 2019-11-03: v2.0.0
 Reimplement browser synchronization in custom node server to drop dependency for browser-sync and support other platforms than os x. `C-c C-s d` to disconnect from browser. `C-c C-s p` to toggle presenter mode. Close the window when disconnecting from the slideshow on os x.
 

@@ -3,7 +3,7 @@
 ;; Copyright (C) 2015 Torgeir Thoresen
 
 ;; Author: @torgeir
-;; Version: 2.0.1
+;; Version: 2.0.2
 ;; Keywords: remark, slideshow, markdown, hot reload
 ;; Package-Requires: ((emacs "25.1") (markdown-mode "2.0"))
 
