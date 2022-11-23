@@ -3,7 +3,7 @@
 ;; Copyright (C) 2015 Torgeir Thoresen
 
 ;; Author: @torgeir
-;; Version: 2.0.2
+;; Version: 2.1.0
 ;; Keywords: remark, slideshow, markdown, hot reload
 ;; Package-Requires: ((emacs "25.1") (markdown-mode "2.0"))
 
@@ -35,7 +35,17 @@
 
 (defvar remark--folder
   (file-name-directory (locate-file "remark-mode.el" load-path))
-  "Folder containing default remark skeleton file remark.html.")
+  "Installation folder.")
+
+
+(defvar remark--default-skeleton-file
+  (concat remark--folder "remark.html")
+  "Default remark skeleton file, remark.html in the installation folder.")
+
+
+(defvar remark-skeleton-file
+  nil
+  "User provided remark skeleton file.")
 
 
 (defvar-local remark--last-cursor-pos 1
@@ -133,6 +143,7 @@ Optional argument ARG skips to previous incremental slide."
       (delete-region (line-beginning-position) (1+ (line-end-position))))
     (save-buffer)))
 
+
 (defun remark-move-slide-next ()
   "Move the slide past the next slide."
   (interactive)
@@ -183,12 +194,14 @@ Optional argument ARG skips to previous incremental slide."
 
 
 (defun remark--output-file-name ()
-  "Optional user provided index.html file to write html slide set back to."
+  "Optional user provided index.html file to write html slide set back to. Only
+used if `remark-skeleton-file' is not set."
   (concat (file-name-directory (buffer-file-name)) "index.html"))
 
 
 (defun remark--write-output-file (template-file content out-file)
-  "Weave TEMPLATE-FILE together with CONTENT to create slideshow. Write the result to OUT-FILE."
+  "Weave TEMPLATE-FILE together with CONTENT to create slideshow. Write the
+result to OUT-FILE."
   (when-let (template-file-content (remark--file-as-string template-file))
     (let* ((positions (with-temp-buffer
                         (insert template-file-content)
@@ -208,13 +221,20 @@ Optional argument ARG skips to previous incremental slide."
 
 
 (defun remark--write-output-files ()
-  "Write the remark output index.html file to the same folder as the .remark file for the resulting slideshow."
-  (let* ((default-remark-template (concat remark--folder "remark.html"))
-         (user-out-file (file-truename (remark--output-file-name)))
-         (markdown (buffer-string)))
-    (remark--write-output-file (if (file-exists-p user-out-file)
-                                   user-out-file
-                                 default-remark-template) markdown user-out-file)))
+  "Write the remark output index.html file to the same folder as the .remark
+file for the resulting slideshow.
+
+Prefer `remark-skeleton-file' as a template for the output file. If it is not
+set, reuse the existing user provided index.html file. Or else fall back to the
+default skeleton file from the installation."
+  (let* ((user-out-file (file-truename (remark--output-file-name)))
+         (markdown (buffer-string))
+         (template-file (if remark-skeleton-file
+                            remark-skeleton-file
+                          (if (file-exists-p user-out-file)
+                              user-out-file
+                            remark--default-skeleton-file))))
+    (remark--write-output-file template-file markdown user-out-file)))
 
 
 (defun remark--close-tab ()
@@ -294,7 +314,8 @@ Optional argument RELOAD reloads the slideshow in the browser."
 
 
 (defun remark--post-command ()
-  "Post command hook that queues a slide visit after some amount of time has occurred."
+  "Post command hook that queues a slide visit after some amount of time has
+occurred."
   (when (and (remark--is-connected)
              (string-suffix-p ".remark" buffer-file-name))
     (when remark--last-move-timer
@@ -308,8 +329,10 @@ Optional argument RELOAD reloads the slideshow in the browser."
                                                 (not (equal (point) remark--last-cursor-pos))
                                                 (string-match-p
                                                  "^--"
-                                                 (buffer-substring (min (point) (min (point-max) remark--last-cursor-pos))
-                                                                   (max (point) (min (point-max) remark--last-cursor-pos)))))
+                                                 (buffer-substring (min (point)
+                                                                        (min (point-max) remark--last-cursor-pos))
+                                                                   (max (point)
+                                                                        (min (point-max) remark--last-cursor-pos)))))
                                            (remark-visit-slide-in-browser))
                                          (setq remark--last-cursor-pos (point)
                                                remark--last-move-timer nil)))))))

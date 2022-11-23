@@ -29,6 +29,9 @@ Todo
 Nothing planned.
 
 Changelog
+- 2022-11-23: v2.1.0
+Expose remark-skeleton-file to the user to enable sharing a theme across slideshows. Point this var to an html file to use as a slideshow template. This will overwrite an existing index.html on each slideshow render.
+
 - 2021-05-04: v2.0.2
 Fix byte-compiler warnings and void variable access.
 
